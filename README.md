@@ -75,3 +75,19 @@ Quelle: Eurostat, Energiebilanzen (`nrg_bal_c`), Deutschland, GWh, Lizenz CC BY 
 Prüfung 2024: 2.067 TWh (1990: 2.543 TWh). Industrie 563 TWh (Strom und Erdgas je 35 %), Verkehr 576 TWh (Öl 90 %), Haushalte 610 TWh (Erdgas 37 %, Strom 22 %, Öl 19 %, Erneuerbare direkt 16 %), Gewerbe 277 TWh (Strom 44 %).
 
 Ort im Monitor: Teil Energie, neues Kapitel „Quellen“, mit Verweis auf „Leben vor Ort › Energie“ und auf den EU-Vergleich.
+
+## Baustein 4: Installierte Leistung
+
+Deutschland: Kraftwerksleistung nach Energieträger seit 1990, fortgeschrieben mit dem Marktstammdatenregister. EU: Wind und Photovoltaik in kW je Einwohner je Land.
+
+    python abruf/leistung.py --mastr <Pfad oder Adresse von mastr_kreis_jahr.csv>   # dann /vorschau/leistung.html
+
+Ergebnisse: `daten/leistung.csv` (geo, land, traeger, jahr, gw, quelle) und `daten/leistung_stand.json` (Einwohner am Jahresende, Namen).
+
+Quellen: Eurostat `nrg_inf_epc` (maximale elektrische Nettoleistung, alle Betreiber) und `demo_pjan` (Bevölkerung am 1.1. des Folgejahres), CC BY 4.0; Marktstammdatenregister (Bruttoleistung, DL-DE-BY 2.0) für Jahre nach dem jüngsten Eurostat-Jahr.
+
+Grenzen: Für Deutschland fehlen bei Eurostat 2005 bis 2017 Kohle, Gas, Öl und Biomasse einzeln und Wind bis 2021 nach Land und See; die Gruppen sind deshalb grob (Kohle, Gas, Öl, Biomasse zusammen; Wind zusammen). Pumpspeicher fehlen. Eurostat führt für 2023 noch 4,2 GW Kernkraft, obwohl die letzten Kernkraftwerke am 15.4.2023 vom Netz gingen. Die MaStR-Fortschreibung zählt Wind auf See mit dem Eurostat-Stand des Vorjahres. ENTSO-E ist aus der Cloud nicht erreichbar und wurde nicht genutzt.
+
+Prüfung: Deutschland Ende 2024 91,2 GW Photovoltaik, 72,7 GW Wind (davon 9,2 GW auf See), 90,2 GW Kohle, Gas, Öl und Biomasse; Wind und Photovoltaik 1,96 kW je Einwohner, Platz 3 der EU hinter Schweden und den Niederlanden (EU 1,19 kW).
+
+Ort im Monitor: Teil Energie, Kapitel „Quellen“, neben der Endenergie; der EU-Vergleich mit Verweis nach Wachstum › Welt.
