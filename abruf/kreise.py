@@ -60,7 +60,7 @@ def holen(url, ziel=None, daten=None, cache=None):
     req = urllib.request.Request(url, data=daten, headers=UA)
     with urllib.request.urlopen(req, timeout=600) as r:
         b = r.read()
-    if cache and ziel:
+    if cache and ziel and not b.lstrip()[:1] in (b"{", b"<"):   # Fehlermeldungen nicht zwischenspeichern
         cache.mkdir(parents=True, exist_ok=True)
         (cache / ziel).write_bytes(b)
     return b

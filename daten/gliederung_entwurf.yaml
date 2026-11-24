@@ -26,3 +26,12 @@
    einfach_en: "The bars show how much of the energy in each EU country comes from wind, sun, water and biomass. In electricity Germany is above the EU average, in heating far below. By 2030 the EU wants to reach at least 42.5% overall.",
    details: "Anteil am Bruttoendenergieverbrauch nach den Rechenregeln der Erneuerbare-Energien-Richtlinie (Eurostat SHARES). Im Verkehr zählen Strom aus erneuerbaren Quellen und fortschrittliche Biokraftstoffe mehrfach; der Anteil liegt daher über dem physischen. Das Ziel von 42,5 % für 2030 steht in der Richtlinie (EU) 2023/2413.",
    details_en: "Share of gross final energy consumption under the accounting rules of the Renewable Energy Directive (Eurostat SHARES). In transport, renewable electricity and advanced biofuels count several times, so the share is above the physical one. The 42.5% target for 2030 is set in Directive (EU) 2023/2413."}
+
+# Baustein 3: Teil Energie, neues Kapitel „Quellen“. Verweise auf ENERGIEWENDE und ERNEUERBARE_EU.
+- {handle: "ENDENERGIE", kurz: "Endenergie", kurz_en: "Final energy",
+   titel: "Welche Energie verbrauchen Industrie, Verkehr und Haushalte, und woher kommt sie?",
+   titel_en: "What energy do industry, transport and households use, and where does it come from?",
+   einfach: "Die Balken zeigen, wie viel Energie jeder Bereich verbraucht und woher sie kommt. Autos und Lkw fahren fast nur mit Öl, Wohnungen werden vor allem mit Gas beheizt. Seit 1990 ist der Verbrauch um ein Fünftel gesunken.",
+   einfach_en: "The bars show how much energy each sector uses and where it comes from. Cars and lorries run almost entirely on oil, homes are heated mainly with gas. Since 1990 consumption has fallen by a fifth.",
+   details: "Energetischer Endenergieverbrauch nach der Energiebilanz von Eurostat, ohne nicht energetischen Verbrauch wie Rohbenzin für die Chemie. Strom und Fernwärme stehen als eigene Quellen; aus welchen Energieträgern sie erzeugt werden, zeigt das Bild nicht. Erneuerbare direkt sind Holz, Biogas, Biokraftstoffe, Solarthermie und Umweltwärme. Eurostat grenzt teils anders ab als die AG Energiebilanzen.",
+   details_en: "Final energy consumption for energy purposes according to the Eurostat energy balance, excluding non-energy use such as naphtha for chemicals. Electricity and district heat appear as sources of their own; the chart does not show what they are generated from. Direct renewables are wood, biogas, biofuels, solar thermal and ambient heat. Eurostat's definitions partly differ from those of AG Energiebilanzen."}

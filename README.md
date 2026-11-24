@@ -61,3 +61,17 @@ Quelle: Eurostat, SHARES (`nrg_ind_ren`), Lizenz CC BY 4.0. Anteil am Bruttoende
 Prüfung 2024: Deutschland insgesamt 22,5 % (Platz 16 von 27, EU 25,2 %), Strom 54,1 % (Platz 9, EU 47,5 %), Wärme und Kälte 17,7 % (Platz 24, EU 26,7 %), Verkehr 12,4 % (Platz 8, EU 11,2 %).
 
 Ort im Monitor: Teil Wachstum, Kapitel Welt, mit Verweis aus dem Teil Energie.
+
+## Baustein 3: Endenergie in Deutschland
+
+Energetischer Endenergieverbrauch nach Sektor (Industrie, Verkehr, Haushalte, Gewerbe/Handel/Dienstleistungen, Land- und Forstwirtschaft und Sonstige) und Quelle (Öl, Erdgas, Kohle, Strom, Fernwärme, Erneuerbare direkt, Abfall und Sonstige), 1990 bis 2024. Als Sankey-Ersatz: oben ein Balken je Sektor mit den Quellen, unten der Verlauf als gestapelte Fläche.
+
+    python abruf/endenergie.py   # dann /vorschau/endenergie.html
+
+Ergebnisse: `daten/endenergie_de.csv` (jahr, sektor, quelle, twh) und `daten/endenergie_stand.json`.
+
+Quelle: Eurostat, Energiebilanzen (`nrg_bal_c`), Deutschland, GWh, Lizenz CC BY 4.0. Das Skript prüft je Jahr, dass die Teile den Gesamtwert ergeben. Strom und Fernwärme sind eigene Quellen; ihre Erzeugung zeigt dieses Bild nicht. Eurostat grenzt teils anders ab als die AG Energiebilanzen (deren Seite ist aus der Cloud nicht erreichbar).
+
+Prüfung 2024: 2.067 TWh (1990: 2.543 TWh). Industrie 563 TWh (Strom und Erdgas je 35 %), Verkehr 576 TWh (Öl 90 %), Haushalte 610 TWh (Erdgas 37 %, Strom 22 %, Öl 19 %, Erneuerbare direkt 16 %), Gewerbe 277 TWh (Strom 44 %).
+
+Ort im Monitor: Teil Energie, neues Kapitel „Quellen“, mit Verweis auf „Leben vor Ort › Energie“ und auf den EU-Vergleich.
