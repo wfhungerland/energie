@@ -46,4 +46,18 @@ Prüfung: Deutschland Ende 2025 rund 68 GW Wind an Land und 118 GW Photovoltaik 
 
 Die Regionaldatenbank verlangt ein Konto: `RDB_USER` und `RDB_PASS` oder das Netzwerk-Secret der Cloud-Umgebung.
 
-Offen: Wärmepumpen im Bestand aus dem Zensus 2022 (Heizungsart je Gemeinde); die Zensus-Datenbank verlangt ein eigenes Konto.
+Offen (Baustein 1): Wärmepumpen im Bestand aus dem Zensus 2022 (Heizungsart je Gemeinde); die Zensus-Datenbank verlangt ein eigenes Konto.
+
+## Baustein 2: Erneuerbare in der EU
+
+Anteile der Erneuerbaren insgesamt, im Strom, in Wärme und Kälte und im Verkehr je EU-Land, dazu der Verlauf für Deutschland und die EU seit 2004.
+
+    python abruf/eu_anteile.py   # dann /vorschau/eu.html
+
+Ergebnisse: `daten/eu_erneuerbare.csv` (geo, land, sektor, jahr, wert, status; status p = vorläufig) und `daten/eu_erneuerbare_stand.json`.
+
+Quelle: Eurostat, SHARES (`nrg_ind_ren`), Lizenz CC BY 4.0. Anteil am Bruttoendenergieverbrauch nach den Regeln der Erneuerbare-Energien-Richtlinie; im Verkehr mit Mehrfachanrechnung. Alle vier Sektoren liegen für alle 27 Länder bis 2024 vor; für 2025 gibt es vorläufige Werte nur insgesamt und für Strom (und für einzelne Länder bei Wärme).
+
+Prüfung 2024: Deutschland insgesamt 22,5 % (Platz 16 von 27, EU 25,2 %), Strom 54,1 % (Platz 9, EU 47,5 %), Wärme und Kälte 17,7 % (Platz 24, EU 26,7 %), Verkehr 12,4 % (Platz 8, EU 11,2 %).
+
+Ort im Monitor: Teil Wachstum, Kapitel Welt, mit Verweis aus dem Teil Energie.

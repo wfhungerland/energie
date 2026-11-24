@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erneuerbare in der EU</title>
+<style>
+:root{--bg:#fbfaf8;--fg:#1d1b22;--grau:#6b6775;--linie:#d9d5df;--hell:#cbbbeb;--de:#4a2a96;--eu:#e8417a;--stab:#a58bdb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17151c;--fg:#ece9f2;--grau:#a29db0;--linie:#3a3644;--hell:#4a3678;--de:#cdbaff;--eu:#ff6f9c;--stab:#7d62c4}}
+:root[data-theme="dark"]{--bg:#17151c;--fg:#ece9f2;--grau:#a29db0;--linie:#3a3644;--hell:#4a3678;--de:#cdbaff;--eu:#ff6f9c;--stab:#7d62c4}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 40px}
+nav{font-size:.85rem;margin-bottom:10px}nav a{color:var(--grau)}
+h1{font-size:1.45rem;margin:0 0 4px}h2{font-size:1.05rem;margin:26px 0 4px}
+.unter{color:var(--grau);margin:0 0 16px}
+.reiter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.reiter button{font:inherit;font-size:.9rem;border:1px solid var(--linie);background:none;color:var(--fg);padding:5px 11px;border-radius:16px;cursor:pointer}
+.reiter button[aria-pressed="true"]{background:var(--stab);border-color:var(--stab);color:#fff}
+.antwort{color:var(--grau);margin:0 0 10px}
+svg{width:100%;height:auto;display:block;font-size:12px}
+svg text{fill:var(--fg)}svg text.v{paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round}svg .g{fill:var(--grau)}
+.achse{stroke:var(--linie)}
+details{margin-top:18px;color:var(--grau);font-size:.88rem}details p{margin:.4em 0}
+</style>
+</head>
+<body>
+<main>
+<nav><a href="index.html">Energiewende vor Ort</a> · <b>Erneuerbare in der EU</b></nav>
+<h1>Erneuerbare in der EU</h1>
+<p class="unter">Wie viel der Energie für Strom, Wärme und Verkehr kommt aus erneuerbaren Quellen?</p>
+<div class="reiter" id="reiter"></div>
+<p class="antwort" id="antwort"></p>
+<div class="legende" style="font-size:.85rem;color:var(--grau);margin-bottom:4px"><b style="color:var(--de)">DE</b> Deutschland · <b style="color:var(--eu)">EU</b> Durchschnitt der EU</div>
+<svg id="laender" role="img" aria-label="Anteile je EU-Land"></svg>
+<h2 id="t2"></h2>
+<svg id="verlauf" role="img" aria-label="Verlauf Deutschland und EU"></svg>
+<details>
+<summary>Lesehilfe und Quellen</summary>
+<p>Oben steht jedes EU-Land mit seinem Anteil im jüngsten vollständigen Jahr, Deutschland dunkel, die EU als Linie. Unten der Verlauf für Deutschland und die EU; gestrichelt sind vorläufige Werte.</p>
+<p>Anteil am Bruttoendenergieverbrauch nach den Rechenregeln der Erneuerbare-Energien-Richtlinie. Im Verkehr zählen Strom aus erneuerbaren Quellen und fortschrittliche Biokraftstoffe mehrfach, daher liegt der Anteil über dem physischen. Ziel der EU für 2030: mindestens 42,5 % insgesamt (Richtlinie (EU) 2023/2413).</p>
+<p id="quellen"></p>
+</details>
+</main>
+<script>
+const S=[{k:"insgesamt",n:"Insgesamt"},{k:"strom",n:"Strom"},{k:"waerme",n:"Wärme und Kälte"},{k:"verkehr",n:"Verkehr"}];
+const $=id=>document.getElementById(id),NS="http://www.w3.org/2000/svg";
+const z=(v,d=1)=>v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
+let D=[],ST,sek=S[0];
+Promise.all([fetch("../daten/eu_erneuerbare.csv").then(r=>r.text()),fetch("../daten/eu_erneuerbare_stand.json").then(r=>r.json())]).then(([c,s])=>{
+ ST=s;D=c.trim().split(/\r?\n/).slice(1).map(l=>{const[g,la,se,j,w,st]=l.split(",");return{g,la,se,j:+j,w:+w,st};});
+ addEventListener("resize",()=>{clearTimeout(window._r);window._r=setTimeout(zeichne,150);});
+ S.forEach(x=>{const b=document.createElement("button");b.textContent=x.n;b.dataset.k=x.k;b.onclick=()=>{sek=x;zeichne();};$("reiter").appendChild(b);});
+ $("quellen").textContent=`Quelle: Eurostat, SHARES (nrg_ind_ren), Stand ${ST.aktualisiert}. Lizenz CC BY 4.0.`;zeichne();});
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e;}
+function zeichne(){
+ document.querySelectorAll("#reiter button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===sek.k));
+ const J=ST.jahr_voll,row=D.filter(d=>d.se===sek.k&&d.j===J),eu=row.find(d=>d.g==="EU27_2020"),la=row.filter(d=>d.g!=="EU27_2020").sort((a,b)=>b.w-a.w);
+ const de=la.find(d=>d.g==="DE"),rang=la.indexOf(de)+1;
+ $("antwort").textContent=`${sek.n} ${J}: Deutschland ${z(de.w)} %, Platz ${rang} von 27. EU ${z(eu.w)} %. Am höchsten: ${la[0].la} mit ${z(la[0].w)} %.`;
+ // Länderbild
+ const svg=$("laender");svg.innerHTML="";const W=Math.max(320,svg.parentNode.clientWidth),L=118,R=46,H=18,top=22,h=top+la.length*H+6;svg.setAttribute("viewBox",`0 0 ${W} ${h}`);
+ const max=Math.max(100,...la.map(d=>d.w)),x=v=>L+(W-L-R)*v/max;
+ [0,25,50,75,100].filter(t=>t<=max).forEach(t=>{el("line",{x1:x(t),x2:x(t),y1:top-6,y2:h-4,class:"achse"},svg);const tx=el("text",{x:x(t),y:12,"text-anchor":"middle",class:"g"},svg);tx.textContent=t+" %";});
+ const euL=el("line",{x1:x(eu.w),x2:x(eu.w),y1:top-6,y2:h-4,stroke:"var(--eu)","stroke-width":2},svg);
+ la.forEach((d,i)=>{const y=top+i*H+H/2,ist=d.g==="DE";
+  const t=el("text",{x:L-8,y:y+4,"text-anchor":"end","font-weight":ist?700:400},svg);t.textContent=d.la;
+  el("rect",{x:L,y:y-5,width:Math.max(1,x(d.w)-L),height:10,rx:2,fill:ist?"var(--de)":"var(--hell)"},svg);
+  const v=el("text",{x:x(d.w)+5,y:y+4,class:ist?"v":"g v","font-weight":ist?700:400},svg);v.textContent=z(d.w);});
+ const et=el("text",{x:x(eu.w)+4,y:h+10,style:"fill:var(--eu)"},svg);svg.setAttribute("viewBox",`0 0 ${W} ${h+16}`);et.textContent="EU "+z(eu.w);
+ // Verlauf
+ $("t2").textContent=`${sek.n}: Deutschland und EU seit 2004`;
+ const v=$("verlauf");v.innerHTML="";const VW=Math.max(320,v.parentNode.clientWidth),VH=VW<500?240:300,l=30,r=62,o=14,u=26;v.setAttribute("viewBox",`0 0 ${VW} ${VH}`);
+ const ser=g=>D.filter(d=>d.se===sek.k&&d.g===g).sort((a,b)=>a.j-b.j),sd=ser("DE"),se=ser("EU27_2020");
+ const j0=2004,j1=Math.max(...sd.map(d=>d.j),...se.map(d=>d.j)),ym=Math.ceil(Math.max(...sd.map(d=>d.w),...se.map(d=>d.w),sek.k==="insgesamt"?42.5:0)/10)*10;
+ const X=j=>l+(VW-l-r)*(j-j0)/(j1-j0),Y=w=>o+(VH-o-u)*(1-w/ym);
+ for(let t=0;t<=ym;t+=10){el("line",{x1:l,x2:VW-r,y1:Y(t),y2:Y(t),class:"achse"},v);const tx=el("text",{x:l-6,y:Y(t)+4,"text-anchor":"end",class:"g"},v);tx.textContent=t;}
+ for(let j=j0;j<=j1;j+=VW<500?6:4){const tx=el("text",{x:X(j),y:VH-8,"text-anchor":"middle",class:"g"},v);tx.textContent=j;}
+ if(sek.k==="insgesamt"){el("line",{x1:l,x2:VW-r,y1:Y(42.5),y2:Y(42.5),stroke:"var(--grau)","stroke-dasharray":"2 3"},v);const tx=el("text",{x:l+4,y:Y(42.5)-5,class:"g"},v);tx.textContent="Ziel der EU für 2030: 42,5 %";}
+ const ye=Y(se.at(-1).w),yd=Y(sd.at(-1).w),ab=ye-yd,ver=Math.abs(ab)<14?(14-Math.abs(ab))/2*(ab<0?-1:1):0;
+ const off={EU:ver,DE:-ver};
+ [[se,"var(--eu)","EU"],[sd,"var(--de)","DE"]].forEach(([s,f,n])=>{
+  const fest=s.filter(d=>d.st!=="p"),vl=s.filter(d=>d.st==="p");
+  el("polyline",{points:fest.map(d=>X(d.j)+","+Y(d.w)).join(" "),fill:"none",stroke:f,"stroke-width":2.5},v);
+  if(vl.length)el("polyline",{points:[fest.at(-1),...vl].map(d=>X(d.j)+","+Y(d.w)).join(" "),fill:"none",stroke:f,"stroke-width":2.5,"stroke-dasharray":"4 3"},v);
+  const e=s.at(-1),tx=el("text",{x:X(e.j)+6,y:Y(e.w)+4+off[n],style:`fill:${f}`,"font-weight":700},v);tx.textContent=n+" "+z(e.w);});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+ "aktualisiert": "2026-09-15",
+ "jahr_voll": 2024,
+ "jahr_neu": 2025,
+ "neu_sektoren": [
+  "insgesamt",
+  "strom",
+  "waerme"
+ ],
+ "status": {
+  "p": "vorläufig",
+  "e": "geschätzt",
+  "b": "Bruch in der Reihe"
+ }
+}
