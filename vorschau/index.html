@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Energiewende vor Ort</title>
+<style>
+:root{--bg:#fbfaf8;--fg:#1d1b22;--grau:#6b6775;--linie:#d9d5df;--leer:#eceaf0;--hl:#e8417a;
+ --s1:#ece6f7;--s2:#cbbbeb;--s3:#a58bdb;--s4:#7a4fd6;--s5:#4a2a96}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17151c;--fg:#ece9f2;--grau:#a29db0;--linie:#3a3644;--leer:#26232d;
+ --s1:#2e2545;--s2:#4a3678;--s3:#6c4cb4;--s4:#9a7be6;--s5:#cdbaff}}
+:root[data-theme="dark"]{--bg:#17151c;--fg:#ece9f2;--grau:#a29db0;--linie:#3a3644;--leer:#26232d;
+ --s1:#2e2545;--s2:#4a3678;--s3:#6c4cb4;--s4:#9a7be6;--s5:#cdbaff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.45rem;margin:0 0 4px}
+.unter{color:var(--grau);margin:0 0 16px}
+.reiter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.reiter button{font:inherit;font-size:.9rem;border:1px solid var(--linie);background:none;color:var(--fg);padding:5px 11px;border-radius:16px;cursor:pointer}
+.reiter button[aria-pressed="true"]{background:var(--s4);border-color:var(--s4);color:#fff}
+.frage{font-weight:600;margin:4px 0 2px}
+.antwort{color:var(--grau);margin:0 0 10px;min-height:1.4em}
+.suche{display:flex;gap:8px;margin-bottom:8px}
+.suche input{flex:1;font:inherit;padding:6px 10px;border:1px solid var(--linie);border-radius:6px;background:var(--bg);color:var(--fg)}
+.karte{position:relative}
+svg{width:100%;height:auto;display:block;max-height:78vh}
+path{stroke:var(--bg);stroke-width:.5;cursor:pointer}
+path.wahl{stroke:var(--hl);stroke-width:2.2}
+.legende{display:flex;gap:2px;margin:10px 0 2px;font-size:.8rem;color:var(--grau);flex-wrap:wrap}
+.legende span{flex:1;min-width:60px}
+.legende i{display:block;height:10px;border-radius:2px;margin-bottom:3px}
+.info{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--linie);border-radius:6px;padding:6px 9px;font-size:.85rem;box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;max-width:240px}
+details{margin-top:18px;color:var(--grau);font-size:.88rem}
+details p{margin:.4em 0}
+a{color:var(--s4)}
+</style>
+</head>
+<body>
+<main>
+<h1>Energiewende vor Ort</h1>
+<p class="unter">Wo steht wie viel Wind und Sonne, wo fahren die meisten Elektroautos? Alle 400 Kreise.</p>
+<div class="reiter" id="reiter"></div>
+<p class="frage" id="frage"></p>
+<p class="antwort" id="antwort"></p>
+<div class="suche"><input id="suche" list="kreisliste" placeholder="Kreis suchen" autocomplete="off"><datalist id="kreisliste"></datalist></div>
+<div class="karte"><svg id="svg" role="img" aria-label="Karte der Kreise"></svg><div class="info" id="info"></div></div>
+<div class="legende" id="legende"></div>
+<details>
+<summary>Lesehilfe und Quellen</summary>
+<p>Jede Karte zeigt alle 400 Kreise. Je dunkler, desto mehr. Die Farbstufen teilen die Kreise in fünf gleich große Gruppen. Ein Kreis lässt sich oben suchen oder in der Karte antippen.</p>
+<p id="quellen"></p>
+</details>
+</main>
+<script>
+const SICHTEN=[
+ {k:"wind_sonne_kw_ew",n:"Wind und Sonne",f:"Wie viel Wind- und Solarleistung steht je Einwohner?",e:"kW je Einwohner",d:2},
+ {k:"wind_kw_ew",n:"Wind",f:"Wo drehen sich die meisten Windräder?",e:"kW je Einwohner",d:2},
+ {k:"sonne_kw_ew",n:"Sonne",f:"Wo liegt die meiste Photovoltaik?",e:"kW je Einwohner",d:2},
+ {k:"eauto_anteil",n:"E-Autos",f:"Wo fahren die meisten Elektroautos?",e:"% der Pkw",d:1},
+ {k:"ladepunkte_10t_ew",n:"Ladepunkte",f:"Wo gibt es die meisten öffentlichen Ladepunkte?",e:"je 10.000 Einwohner",d:0},
+ {k:"eautos_je_ladepunkt",n:"E-Autos je Ladepunkt",f:"Wie viele Elektroautos teilen sich einen Ladepunkt?",e:"E-Autos je Ladepunkt",d:0}];
+const STUFEN=["--s1","--s2","--s3","--s4","--s5"];
+const zahl=(v,d)=>v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
+let K,W={},N={},STAND,sicht=SICHTEN[0],wahl=null;
+const kurzname=x=>/, (kreisfreie Stadt|Stadtkreis|Freie und Hansestadt)/.test(x)||!x.includes(",")?x.split(",")[0]:x.replace(/^(.*), ([^,]+)$/,"$1 ($2)");
+const $=id=>document.getElementById(id);
+Promise.all([fetch("../daten/kreise_karte.json").then(r=>r.json()),fetch("../daten/kreise_energie.csv").then(r=>r.text()),
+ fetch("../daten/kreise_namen.csv").then(r=>r.text()),fetch("../daten/kreise_stand.json").then(r=>r.json())]).then(([k,c,n,s])=>{
+ K=k;STAND=s;
+ c.trim().split(/\r?\n/).slice(1).forEach(z=>{const[a,nu,kz,j,v]=z.split(",");(W[kz]??={})[nu]=+v;});
+ n.trim().split(/\r?\n/).slice(1).forEach(z=>{const[a,nu,...na]=z.split(",");N[nu]=kurzname(na.join(",").replace(/^"|"$/g,""));});
+ aufbau();zeichne();});
+function aufbau(){
+ const svg=$("svg");svg.setAttribute("viewBox",`0 0 ${K.breite} ${K.hoehe}`);
+ for(const[nu,d]of Object.entries(K.pfade)){const p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("d",d);p.dataset.n=nu;svg.appendChild(p);}
+ svg.addEventListener("mousemove",e=>{const nu=e.target.dataset?.n;nu?info(nu,e):($("info").style.display="none");});
+ svg.addEventListener("mouseleave",()=>$("info").style.display="none");
+ svg.addEventListener("click",e=>{const nu=e.target.dataset?.n;if(!nu)return;waehle(wahl===nu?null:nu);});
+ SICHTEN.forEach(s=>{const b=document.createElement("button");b.textContent=s.n;b.onclick=()=>{sicht=s;zeichne();};b.dataset.k=s.k;$("reiter").appendChild(b);});
+ Object.entries(N).sort((a,b)=>a[1].localeCompare(b[1],"de")).forEach(([nu,na])=>{const o=document.createElement("option");o.value=na;$("kreisliste").appendChild(o);});
+ $("suche").addEventListener("change",e=>{const nu=Object.keys(N).find(x=>N[x]===e.target.value);waehle(nu||null);});
+ $("quellen").textContent=`Quellen: Marktstammdatenregister der Bundesnetzagentur (Leistung ${STAND.mastr}, Wind nur an Land), Regionaldatenbank Deutschland (Bevölkerung ${STAND.bevoelkerung}; Pkw nach Kraftstoff ${STAND.pkw}, Kraftfahrt-Bundesamt), Ladesäulenregister der Bundesnetzagentur (Stand ${STAND.ladesaeulen}, Ladepunkte in Betrieb, nur gemeldete), Kreisgrenzen GISCO NUTS 2024. Lizenzen: Datenlizenz Deutschland 2.0 und CC BY 4.0.`;}
+function stufen(werte){const s=[...werte].sort((a,b)=>a-b);return[.2,.4,.6,.8].map(q=>s[Math.floor(q*(s.length-1))]);}
+function stufe(v,g){let i=0;while(i<g.length&&v>g[i])i++;return i;}
+function zeichne(){
+ document.querySelectorAll("#reiter button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===sicht.k));
+ $("frage").textContent=sicht.f;
+ const w=W[sicht.k],g=stufen(Object.values(w));
+ document.querySelectorAll("#svg path").forEach(p=>{const v=w[p.dataset.n];p.style.fill=v==null?"var(--leer)":`var(${STUFEN[stufe(v,g)]})`;p.classList.toggle("wahl",p.dataset.n===wahl);});
+ if(wahl){const p=document.querySelector(`#svg path[data-n="${wahl}"]`);p&&p.parentNode.appendChild(p);}
+ const lo=Math.min(...Object.values(w)),hi=Math.max(...Object.values(w)),gr=[lo,...g,hi];
+ $("legende").innerHTML=STUFEN.map((s,i)=>`<span><i style="background:var(${s})"></i>${zahl(gr[i],sicht.d)} bis ${zahl(gr[i+1],sicht.d)}</span>`).join("");
+ antwort();}
+function antwort(){
+ const w=W[sicht.k],b=STAND.bund[sicht.k];
+ if(wahl){$("antwort").textContent=`${N[wahl]}: ${zahl(w[wahl],sicht.d)} ${sicht.e}, Deutschland ${zahl(b,sicht.d)}.`;return;}
+ const top=Object.entries(w).sort((a,b)=>b[1]-a[1])[0];
+ $("antwort").textContent=`Deutschland: ${zahl(b,sicht.d)} ${sicht.e}. Am meisten: ${N[top[0]]} mit ${zahl(top[1],sicht.d)}.`;}
+function waehle(nu){wahl=nu;if(!nu)$("suche").value="";else $("suche").value=N[nu];zeichne();}
+function info(nu,e){const w=W[sicht.k][nu],box=$("info"),r=$("svg").parentNode.getBoundingClientRect();
+ box.innerHTML=`<b>${N[nu]}</b><br>${w==null?"keine Angabe":zahl(w,sicht.d)+" "+sicht.e}`;box.style.display="block";
+ let x=e.clientX-r.left+12,y=e.clientY-r.top+12;if(x+box.offsetWidth>r.width)x=e.clientX-r.left-box.offsetWidth-12;box.style.left=x+"px";box.style.top=y+"px";}
+</script>
+</body>
+</html>
