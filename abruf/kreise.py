@@ -10,6 +10,9 @@ Quellen (alle frei, siehe README):
   REST-Schnittstelle; Konto in RDB_USER und RDB_PASS oder über das Netzwerk-Secret der Umgebung.
 - Ladesäulenregister der Bundesnetzagentur (CSV), Ladepunkte in Betrieb; Zuordnung zum Kreis
   über die Koordinaten (Punkt in NUTS-3-Fläche), geprüft gegen den Kreisnamen im Register.
+- Zensus 2022 (Statistische Ämter des Bundes und der Länder, DL-DE-BY 2.0), Tabelle 4000W-1012
+  Wohnungen nach Energieträger der Heizung, Kreise (GEOLK4). Konto der Zensus-Datenbank in ZENSUS_USER
+  und ZENSUS_PASS oder über das Netzwerk-Secret der Umgebung; ohne Zugang entfallen die Heizungswerte.
 - GISCO (Eurostat): NUTS-3-Flächen 2024 und Zuordnung Gemeinde zu NUTS 3 (EU-27-LAU-2025-NUTS-2024).
 
 Aufruf: python abruf/kreise.py [--mastr PFAD_ODER_URL] [--cache ORDNER]
@@ -40,6 +43,7 @@ BNETZA_SEITE = "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundG
 LAU_SEITE = "https://ec.europa.eu/eurostat/web/nuts/local-administrative-units"
 GISCO = "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_{m}M_2024_4326_LEVL_3.geojson"
 UA = {"User-Agent": "Mozilla/5.0 (energie-abruf)"}
+ZENSUS = "https://ergebnisse.zensus2022.de/api/rest/2020/"
 
 # Kennzahlen: Name -> Beschreibung (für README und Prüfung)
 KENNZAHLEN = {
@@ -50,6 +54,9 @@ KENNZAHLEN = {
     "plugin_anteil": "Anteil der Plug-in-Hybride am Pkw-Bestand in %, Stichtag 1.1.",
     "ladepunkte_10t_ew": "öffentliche Ladepunkte in Betrieb je 10.000 Einwohner",
     "eautos_je_ladepunkt": "reine Elektroautos je öffentlichem Ladepunkt",
+    "waermepumpe_anteil": "Anteil der Wohnungen mit Wärmepumpe, Solar- oder Geothermie als Energieträger der Heizung in %, Zensus 15.5.2022",
+    "gas_oel_anteil": "Anteil der Wohnungen mit Gas oder Heizöl als Energieträger der Heizung in %, Zensus 15.5.2022",
+    "fernwaerme_anteil": "Anteil der Wohnungen mit Fernwärme in %, Zensus 15.5.2022",
 }
 
 
@@ -108,6 +115,31 @@ def flaechen(cache, massstab="01"):
         polys = geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
         out[f["properties"]["NUTS_ID"]] = [np.asarray(ring) for poly in polys for ring in poly]
     return out
+
+
+def zensus_heizung(cache):
+    """Wohnungen nach Energieträger der Heizung je Kreis (Anzahl), Zensus 15.5.2022."""
+    p = {"name": "4000W-1012", "area": "all", "format": "ffcsv", "compress": "false", "regionalvariable": "GEOLK4", "language": "de"}
+    h = dict(UA)
+    if os.environ.get("ZENSUS_USER"):
+        h.update(username=os.environ["ZENSUS_USER"], password=os.environ.get("ZENSUS_PASS", ""))
+    ziel = cache / "zensus_4000W-1012_kreise.zip"
+    if ziel.exists():
+        b = ziel.read_bytes()
+    else:
+        req = urllib.request.Request(ZENSUS + "data/tablefile", data=urllib.parse.urlencode(p).encode(), headers=h)
+        b = urllib.request.urlopen(req, timeout=900).read()
+        if not b.startswith(b"PK"):
+            print("Zensus: kein Zugang oder keine Datei, Heizung entfällt:", b[:160])
+            return None
+        cache.mkdir(parents=True, exist_ok=True)
+        ziel.write_bytes(b)
+    z = zipfile.ZipFile(io.BytesIO(b))
+    d = pd.read_csv(z.open(z.namelist()[0]), sep=";", dtype=str)
+    d = d[d.value_unit == "Anzahl"].copy()
+    d["wert"] = pd.to_numeric(d.value.str.replace(",", "."), errors="coerce").fillna(0)   # "-" = keine
+    t = d.pivot_table(index="1_variable_attribute_code", columns="2_variable_attribute_label", values="wert", aggfunc="sum")
+    return t
 
 
 def punkt_in_flaeche(lon, lat, ringe):
@@ -235,6 +267,7 @@ def main():
     lp, lp_stand = ladepunkte(flaechen(a.cache, "01"), nuts_ags, a.cache)
     lp = pd.Series(lp).reindex(bev.index).fillna(0)
 
+    hz = zensus_heizung(a.cache)
     reihen = {
         "wind_kw_ew": (wind * 1000 / bev, bev_jahr),
         "sonne_kw_ew": (sonne * 1000 / bev, bev_jahr),
@@ -244,6 +277,15 @@ def main():
         "ladepunkte_10t_ew": (lp / bev * 10000, int(lp_stand[:4])),
         "eautos_je_ladepunkt": (pkw["Elektro"] / lp.where(lp > 0), int(lp_stand[:4])),
     }
+    if hz is not None:
+        fehlt = set(bev.index) - set(hz.index)
+        if fehlt:
+            sys.exit(f"Zensus: Kreise fehlen {sorted(fehlt)}")
+        alle = hz["Insgesamt"]
+        reihen["waermepumpe_anteil"] = (hz["Solar-/Geothermie, Wärmepumpen"] / alle * 100, 2022)
+        reihen["gas_oel_anteil"] = ((hz["Gas"] + hz["Heizöl"]) / alle * 100, 2022)
+        reihen["fernwaerme_anteil"] = (hz["Fernwärme (verschiedene Energieträger)"] / alle * 100, 2022)
+        print(f"Zensus 2022: {alle.sum():,.0f} Wohnungen, Wärmepumpe/Solar/Geothermie {hz['Solar-/Geothermie, Wärmepumpen'].sum() / alle.sum():.1%}")
     with (DATEN / "kreise_energie.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["ags", "nuts3", "kennzahl", "jahr", "wert"])
@@ -260,13 +302,17 @@ def main():
         "plugin_anteil": pkw["darunter Plug-In-Hybrid"].sum() / pkw["Insgesamt"].sum() * 100,
         "ladepunkte_10t_ew": lp.sum() / bev.sum() * 10000, "eautos_je_ladepunkt": pkw["Elektro"].sum() / lp.sum(),
     }
+    if hz is not None:
+        bund.update(waermepumpe_anteil=hz["Solar-/Geothermie, Wärmepumpen"].sum() / hz["Insgesamt"].sum() * 100,
+                    gas_oel_anteil=(hz["Gas"].sum() + hz["Heizöl"].sum()) / hz["Insgesamt"].sum() * 100,
+                    fernwaerme_anteil=hz["Fernwärme (verschiedene Energieträger)"].sum() / hz["Insgesamt"].sum() * 100)
     namen = rdb_tabelle("12411-01-01-4", bev_jahr, a.cache)[["ags", "1_variable_attribute_label"]].drop_duplicates("ags").set_index("ags")["1_variable_attribute_label"]
     with (DATEN / "kreise_namen.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["ags", "nuts3", "name"])
         for ags in sorted(bev.index):
             w.writerow([ags, ags_nuts[ags], namen.get(ags, "")])
-    stand = {"bevoelkerung": f"31.12.{bev_jahr}", "mastr": f"Ende {bev_jahr}", "pkw": f"1.1.{pjahr}", "ladesaeulen": lp_stand,
+    stand = {"bevoelkerung": f"31.12.{bev_jahr}", "mastr": f"Ende {bev_jahr}", "pkw": f"1.1.{pjahr}", "ladesaeulen": lp_stand, "zensus": "15.5.2022" if hz is not None else None,
              "bund": {k: round(float(v), 4) for k, v in bund.items()}, "kennzahlen": KENNZAHLEN}
     (DATEN / "kreise_stand.json").write_text(json.dumps(stand, ensure_ascii=False, indent=1), encoding="utf-8")
     (DATEN / "kreise_karte.json").write_text(json.dumps(karte(a.cache), separators=(",", ":")), encoding="utf-8")

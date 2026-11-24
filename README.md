@@ -4,7 +4,7 @@ Bausteine für den Makrowolf: aus welchen Quellen Strom, Wärme und Verkehr in D
 
 ## Baustein 1: Energiewende vor Ort
 
-Kreiskarte mit Wind und Sonne je Einwohner, Anteil der Elektroautos und öffentlichen Ladepunkten. Alle 400 Kreise, Gebietsstand 2024.
+Kreiskarte mit Wind und Sonne je Einwohner, Anteil der Elektroautos, öffentlichen Ladepunkten und der Heizung der Wohnungen (Wärmepumpe, Gas und Öl, Fernwärme). Alle 400 Kreise, Gebietsstand 2024.
 
     pip install pandas numpy openpyxl
     python abruf/kreise.py --mastr <Pfad oder Adresse von mastr_kreis_jahr.csv>
@@ -31,6 +31,9 @@ Kennzahlen:
 | `plugin_anteil` | Plug-in-Hybride in % aller Pkw | 1.1.2026 |
 | `ladepunkte_10t_ew` | öffentliche Ladepunkte in Betrieb je 10.000 Einwohner | 12.11.2026 |
 | `eautos_je_ladepunkt` | reine Elektroautos je öffentlichem Ladepunkt | 1.1.2026 und 12.11.2026 |
+| `waermepumpe_anteil` | Wohnungen mit Wärmepumpe, Solar- oder Geothermie in % | 15.5.2022 |
+| `gas_oel_anteil` | Wohnungen mit Gas oder Heizöl in % | 15.5.2022 |
+| `fernwaerme_anteil` | Wohnungen mit Fernwärme in % | 15.5.2022 |
 
 Quellen:
 
@@ -40,13 +43,14 @@ Quellen:
 | Regionaldatenbank Deutschland, 12411-01-01-4 | Bevölkerung am 31.12. | Datenlizenz Deutschland 2.0 |
 | Regionaldatenbank Deutschland, 46251-02-01-4 | Pkw nach Kraftstoffarten am 1.1. (Kraftfahrt-Bundesamt) | Datenlizenz Deutschland 2.0 |
 | Ladesäulenregister (Bundesnetzagentur) | Ladeeinrichtungen mit abgeschlossener Anzeige, Status „In Betrieb“; Kreis über die Koordinaten | Lizenz auf der Seite nicht genannt, vor Übernahme klären |
+| Zensus 2022, Tabelle 4000W-1012 | Wohnungen in Gebäuden mit Wohnraum nach Energieträger der Heizung, Kreise; Wärmepumpen nur zusammen mit Solar- und Geothermie | Datenlizenz Deutschland 2.0 |
 | GISCO (Eurostat) | NUTS-3-Flächen 2024, Zuordnung Gemeinde zu NUTS 3 (LAU 2025) | © EuroGeographics, Nutzung nach GISCO-Bedingungen |
 
-Prüfung: Deutschland Ende 2025 rund 68 GW Wind an Land und 118 GW Photovoltaik (brutto), 2,03 Mio. Elektroautos am 1.1.2026, 214.398 Ladepunkte in Betrieb. Bei 99,3 % der Ladeeinrichtungen passt die Fläche zum Kreisnamen im Register.
+Prüfung: Deutschland Ende 2025 rund 68 GW Wind an Land und 118 GW Photovoltaik (brutto), 2,03 Mio. Elektroautos am 1.1.2026, 214.398 Ladepunkte in Betrieb; Zensus 2022: 43,1 Mio. Wohnungen, davon 2,7 % mit Wärmepumpe, Solar- oder Geothermie, 74,6 % mit Gas oder Öl, 15,1 % mit Fernwärme. Bei 99,3 % der Ladeeinrichtungen passt die Fläche zum Kreisnamen im Register.
 
-Die Regionaldatenbank verlangt ein Konto: `RDB_USER` und `RDB_PASS` oder das Netzwerk-Secret der Cloud-Umgebung.
+Die Regionaldatenbank und die Zensus-Datenbank verlangen je ein Konto: `RDB_USER` und `RDB_PASS`, `ZENSUS_USER` und `ZENSUS_PASS` oder die Netzwerk-Secrets der Cloud-Umgebung. Ohne Zensus-Zugang entfallen die Heizungswerte.
 
-Offen (Baustein 1): Wärmepumpen im Bestand aus dem Zensus 2022 (Heizungsart je Gemeinde); die Zensus-Datenbank verlangt ein eigenes Konto.
+Die Heizung stammt aus dem Zensus vom 15.5.2022 und ist damit älter als die übrigen Werte; neuere Zahlen je Kreis gibt es nicht.
 
 ## Baustein 2: Erneuerbare in der EU
 

@@ -40,7 +40,7 @@ a{color:var(--s4)}
 <main>
 <nav style="font-size:.85rem;margin-bottom:10px"><b>Energiewende vor Ort</b> · <a href="eu.html" style="color:var(--grau)">Erneuerbare in der EU</a> · <a href="endenergie.html" style="color:var(--grau)">Endenergie</a> · <a href="leistung.html" style="color:var(--grau)">Leistung</a></nav>
 <h1>Energiewende vor Ort</h1>
-<p class="unter">Wo steht wie viel Wind und Sonne, wo fahren die meisten Elektroautos? Alle 400 Kreise.</p>
+<p class="unter">Wo steht wie viel Wind und Sonne, wo fahren die meisten Elektroautos, und womit wird geheizt? Alle 400 Kreise.</p>
 <div class="reiter" id="reiter"></div>
 <p class="frage" id="frage"></p>
 <p class="antwort" id="antwort"></p>
@@ -60,7 +60,10 @@ const SICHTEN=[
  {k:"sonne_kw_ew",n:"Sonne",f:"Wo liegt die meiste Photovoltaik?",e:"kW je Einwohner",d:2},
  {k:"eauto_anteil",n:"E-Autos",f:"Wo fahren die meisten Elektroautos?",e:"% der Pkw",d:1},
  {k:"ladepunkte_10t_ew",n:"Ladepunkte",f:"Wo gibt es die meisten öffentlichen Ladepunkte?",e:"je 10.000 Einwohner",d:0},
- {k:"eautos_je_ladepunkt",n:"E-Autos je Ladepunkt",f:"Wie viele Elektroautos teilen sich einen Ladepunkt?",e:"E-Autos je Ladepunkt",d:0}];
+ {k:"eautos_je_ladepunkt",n:"E-Autos je Ladepunkt",f:"Wie viele Elektroautos teilen sich einen Ladepunkt?",e:"E-Autos je Ladepunkt",d:0},
+ {k:"waermepumpe_anteil",n:"Wärmepumpen",f:"Wo heizen die meisten Wohnungen mit Wärmepumpe?",e:"% der Wohnungen",d:1},
+ {k:"gas_oel_anteil",n:"Gas und Öl",f:"Wo heizen die meisten Wohnungen mit Gas oder Öl?",e:"% der Wohnungen",d:0},
+ {k:"fernwaerme_anteil",n:"Fernwärme",f:"Wo hängen die meisten Wohnungen an der Fernwärme?",e:"% der Wohnungen",d:0}];
 const STUFEN=["--s1","--s2","--s3","--s4","--s5"];
 const zahl=(v,d)=>v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
 let K,W={},N={},STAND,sicht=SICHTEN[0],wahl=null;
@@ -81,7 +84,7 @@ function aufbau(){
  SICHTEN.forEach(s=>{const b=document.createElement("button");b.textContent=s.n;b.onclick=()=>{sicht=s;zeichne();};b.dataset.k=s.k;$("reiter").appendChild(b);});
  Object.entries(N).sort((a,b)=>a[1].localeCompare(b[1],"de")).forEach(([nu,na])=>{const o=document.createElement("option");o.value=na;$("kreisliste").appendChild(o);});
  $("suche").addEventListener("change",e=>{const nu=Object.keys(N).find(x=>N[x]===e.target.value);waehle(nu||null);});
- $("quellen").textContent=`Quellen: Marktstammdatenregister der Bundesnetzagentur (Leistung ${STAND.mastr}, Wind nur an Land), Regionaldatenbank Deutschland (Bevölkerung ${STAND.bevoelkerung}; Pkw nach Kraftstoff ${STAND.pkw}, Kraftfahrt-Bundesamt), Ladesäulenregister der Bundesnetzagentur (Stand ${STAND.ladesaeulen}, Ladepunkte in Betrieb, nur gemeldete), Kreisgrenzen GISCO NUTS 2024. Lizenzen: Datenlizenz Deutschland 2.0 und CC BY 4.0.`;}
+ $("quellen").textContent=`Quellen: Marktstammdatenregister der Bundesnetzagentur (Leistung ${STAND.mastr}, Wind nur an Land), Regionaldatenbank Deutschland (Bevölkerung ${STAND.bevoelkerung}; Pkw nach Kraftstoff ${STAND.pkw}, Kraftfahrt-Bundesamt), Ladesäulenregister der Bundesnetzagentur (Stand ${STAND.ladesaeulen}, Ladepunkte in Betrieb, nur gemeldete), ${STAND.zensus?`Zensus 2022 (Wohnungen nach Energieträger der Heizung, Stichtag ${STAND.zensus}; Wärmepumpen zusammen mit Solar- und Geothermie), `:""}Kreisgrenzen GISCO NUTS 2024. Lizenzen: Datenlizenz Deutschland 2.0 und CC BY 4.0.`;}
 function stufen(werte){const s=[...werte].sort((a,b)=>a-b);return[.2,.4,.6,.8].map(q=>s[Math.floor(q*(s.length-1))]);}
 function stufe(v,g){let i=0;while(i<g.length&&v>g[i])i++;return i;}
 function zeichne(){
